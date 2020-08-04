@@ -42,12 +42,12 @@ export default {
             let self = this;
             this.$refs['form'].validate((valid) => {
             if (valid) {
-                // self.$axios.post('http://localhost:8000/login').then(res=>{
-                //     console.log('res+++++++++++=',res)
-                // })
-                self.$axios.post('/apis/login').then(res=>{
+                self.$axios.post('http://localhost:8000/login').then(res=>{
                     console.log('res+++++++++++=',res)
                 })
+                // self.$axios.post('/apis/login').then(res=>{
+                //     console.log('res+++++++++++=',res)
+                // })
                 // this.$router.push({ path: '/manage' })
             } else {
                 console.log('error submit!!');
