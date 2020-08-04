@@ -1,6 +1,34 @@
 """views"""
 from django.shortcuts import render
 from django.http import HttpResponse    # 引用HttpResponse类
+# Create your views here.
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def my_api(request):
+    dic = {}
+    if request.method == 'GET':
+        dic['message'] = 0
+        return HttpResponse(json.dumps(dic))
+    else:
+        dic['message'] = '方法错误'
+        return HttpResponse(json.dumps(dic, ensure_ascii=False))
+
+def login(request):
+    reponse = {}
+    if request.method == 'POST':                                            
+        username = request.POST.get('username', '')                         
+        password = request.POST.get('password', '')
+        if username == 'admin' and password == '123':
+            reponse['message'] = ''
+            reponse['status'] = 0
+            return HttpResponse(json.dumps(reponse))
+        else:
+            reponse['status'] = 600
+            reponse['message'] = '用户或密码错误'
+            return HttpResponse(json.dumps(reponse))
+
 # from app.models import Test
 # # Create your views here
 # def index(request):

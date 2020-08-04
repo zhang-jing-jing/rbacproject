@@ -19,9 +19,5 @@ from app import views as myViews
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('index/', myViews.index),
-    # path('testdb/', myViews.testdb),
-    # path('getestdb/', myViews.getestdb),
-    # path('update/', myViews.update),
-    # path('deleteTest/', myViews.delete_test)
+    path('login',myViews.login)
 ]

@@ -39,9 +39,16 @@ export default {
     },
     methods:{
         login() {
+            let self = this;
             this.$refs['form'].validate((valid) => {
             if (valid) {
-                alert('submit!');
+                // self.$axios.post('http://localhost:8000/login').then(res=>{
+                //     console.log('res+++++++++++=',res)
+                // })
+                self.$axios.post('/apis/login').then(res=>{
+                    console.log('res+++++++++++=',res)
+                })
+                // this.$router.push({ path: '/manage' })
             } else {
                 console.log('error submit!!');
                 return false;

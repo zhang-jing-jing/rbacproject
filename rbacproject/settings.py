@@ -37,17 +37,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'app',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # 按顺序
+    'django.middleware.common.CommonMiddleware', #按顺序
+    # 'django.middleware.csrf.CsrfViewMiddleware',  #按顺序
 ]
 
 ROOT_URLCONF = 'rbacproject.urls'
@@ -81,7 +83,7 @@ DATABASES = {
         'HOST': '127.0.0.1',  # 数据库地址，本机 ip 地址 127.0.0.1
         'PORT': 3306,  # 端口
         'USER': 'root',  # 数据库用户名
-        'PASSWORD': '123456~',  # 数据库密码
+        'PASSWORD': '123456',  # 数据库密码
     }
 }
 
@@ -123,3 +125,33 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#  新增以下配置  #
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+# Origin '*' in CORS_ORIGIN_WHITELIST is missing scheme 出现该错误则将其注释掉
+# CORS_ORIGIN_WHITELIST = (
+#   "*"
+# )
+CORS_ALLOW_METHODS = (
+  'DELETE',
+  'GET',
+  'OPTIONS',
+  'PATCH',
+  'POST',
+  'PUT',
+  'VIEW',
+)
+CORS_ALLOW_HEADERS = (
+  'XMLHttpRequest',
+  'X_FILENAME',
+  'accept-encoding',
+  'authorization',
+  'content-type',
+  'dnt',
+  'origin',
+  'user-agent',
+  'x-csrftoken',
+  'x-requested-with',
+  'Pragma',
+)
