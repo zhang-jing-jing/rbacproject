@@ -4,6 +4,7 @@ from django.http import HttpResponse    # 引用HttpResponse类
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 import json
+from app.models import user
 
 @csrf_exempt
 def my_api(request):
@@ -17,17 +18,29 @@ def my_api(request):
 
 def login(request):
     reponse = {}
-    if request.method == 'POST':                                            
-        username = request.POST.get('username', '')                         
-        password = request.POST.get('password', '')
-        if username == 'admin' and password == '123':
-            reponse['message'] = ''
+    if request.method == 'POST':
+        print('++++++',request)                                            
+        username = request.POST.get('username')                         
+        password = request.POST.get('password')
+        print(username)
+        print(password)
+        if username is not None and password is not None:
+            print('---------------')
+            users = user.objects.filter(account=username)
             reponse['status'] = 0
-            return HttpResponse(json.dumps(reponse))
+            if users.count() > 0:
+                userDto = users.first()
+                print('userDto+++++', userDto.password)
+                print(password)
+                if userDto.password == password:
+                    reponse['message'] = "登录成功"
+                else:
+                    reponse['message'] = "密码错误"
+            else:
+                reponse['message'] = '用户不存在'
         else:
-            reponse['status'] = 600
-            reponse['message'] = '用户或密码错误'
-            return HttpResponse(json.dumps(reponse))
+            reponse['message'] = "参数错误"
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False))
 
 # from app.models import Test
 # # Create your views here
