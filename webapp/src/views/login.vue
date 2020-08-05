@@ -29,7 +29,7 @@ export default {
             rules: {
                 username: [
                     { required: true, message: '请输入用户名', trigger: 'blur' },
-                    { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }
+                    { min: 3, max: 64, message: '长度在 3 到 5 个字符', trigger: 'blur' }
                 ],
                 password: [
                     { required: true, message: '请输入密码', trigger: 'change' }
@@ -42,15 +42,23 @@ export default {
             let self = this;
             this.$refs['form'].validate((valid) => {
             if (valid) {
-                self.$axios.post('http://localhost:8000/login').then(res=>{
-                    console.log('res+++++++++++=',res)
+                let param = new URLSearchParams()
+                param.append('username', self.form.username)
+                param.append('password', self.form.password)
+                self.$axios.post('/apis/login',param).then(res=>{
+                    if(res.status === 200){
+                        if(res.data.status === 0){
+                            this.$router.push({ path: '/manage' })
+                        }else{
+                            this.$message({
+                                message: res.data.message,
+                                type: 'warning'
+                            });
+                        }
+                    }
                 })
-                // self.$axios.post('/apis/login').then(res=>{
-                //     console.log('res+++++++++++=',res)
-                // })
-                // this.$router.push({ path: '/manage' })
             } else {
-                console.log('error submit!!');
+                
                 return false;
             }
             });
@@ -64,7 +72,11 @@ export default {
 .login-page{
     .login-box{
         width: 400px;
-        margin: 0 auto;
+        position:absolute;
+        top: 40%;
+        left: 50%;
+        margin-top: -200px;
+        margin-left: -220px;
         padding: 40px 20px;
         .title{
             font-size: 20px;

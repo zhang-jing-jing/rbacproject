@@ -1,33 +1,49 @@
 """views"""
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.http import HttpResponse    # 引用HttpResponse类
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 import json
+from app.models import user
 
-@csrf_exempt
-def my_api(request):
-    dic = {}
-    if request.method == 'GET':
-        dic['message'] = 0
-        return HttpResponse(json.dumps(dic))
-    else:
-        dic['message'] = '方法错误'
-        return HttpResponse(json.dumps(dic, ensure_ascii=False))
+#验证是否登录的装饰器
+def check_user(func):
+    def inner(*args, **kwargs):
+        #判断是否登录
+        username = args[0].session.get("login_user", "")
+        if username == "":
+            #保存当前的url到session中
+            args[0].session["path"] = args[0].path
+            #重定向到登录页面
+            return redirect(reverse("login"))
+        return func(*args, **kwargs)
+
+    return inner
+
 
 def login(request):
     reponse = {}
-    if request.method == 'POST':                                            
-        username = request.POST.get('username', '')                         
-        password = request.POST.get('password', '')
-        if username == 'admin' and password == '123':
-            reponse['message'] = ''
-            reponse['status'] = 0
-            return HttpResponse(json.dumps(reponse))
+    if request.method == 'POST':
+        username = request.POST.get('username')                         
+        password = request.POST.get('password')
+        if username is not None and password is not None:
+            users = user.objects.filter(account=username)
+            if users.count() > 0:
+                userDto = users.first()
+                if userDto.password == password:
+                    request.session["login_user"] = username
+                    reponse['status'] = 0
+                    reponse['message'] = "登录成功"
+                else:
+                    reponse['status'] = 10
+                    reponse['message'] = "密码错误"
+            else:
+                reponse['status'] = 20
+                reponse['message'] = '用户不存在'
         else:
-            reponse['status'] = 600
-            reponse['message'] = '用户或密码错误'
-            return HttpResponse(json.dumps(reponse))
+            reponse['status'] = 400
+            reponse['message'] = "参数错误"
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False))
 
 # from app.models import Test
 # # Create your views here

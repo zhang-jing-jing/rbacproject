@@ -1,18 +1,23 @@
-// module.exports = {
-//   devServer: {
-//       // Paths
-//       assetsSubDirectory: 'static',
-//       assetsPublicPath: '/',
-//       // proxy: {
-//       //     '/apis': {
-//       //         target: 'https://localhost:8000', // 接口地址
-//       //         changeOrigin: true, // 是否跨域
-//       //         ws:true,
-//       //         pathRewrite: { // 转发
-//       //             '^/apis': ''
-//       //         },
-//       //         secure: false 
-//       //     }
-//       // }
-//   }
-// }
+module.exports = {
+    // publicPath: '/dist',
+    devServer: {
+        proxy: {
+            '/apis': {
+                target: 'http://127.0.0.1:8000/', // target host
+                // ws: true, // proxy websockets 
+                changeOrigin: true, // needed for virtual hosted sites
+                pathRewrite: {
+                    '^/apis': '' // rewrite path
+                }
+            },
+        }
+    },
+    // css: {
+    //     loaderOptions: {
+    //         sass: {
+    //             // data: `@import "~@/assets/sass/main.scss";`
+    //             prependData: `@import "~@/assets/sass/main.scss";`
+    //         }
+    //     }
+    // }
+}
