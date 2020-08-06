@@ -16,6 +16,12 @@ const routes = [
     component:manage,
     children:[
       {
+        path: "/",
+        name: "userManage",
+        component: () =>
+          import("../views/user-manage.vue")
+      },
+      {
         path: "/user-manage",
         name: "userManage",
         component: () =>

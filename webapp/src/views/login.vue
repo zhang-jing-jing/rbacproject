@@ -48,6 +48,7 @@ export default {
                 self.$axios.post('/apis/login',param).then(res=>{
                     if(res.status === 200){
                         if(res.data.status === 0){
+                            this.$store.commit('saveUser',res.data.list)
                             this.$router.push({ path: '/manage' })
                         }else{
                             this.$message({
