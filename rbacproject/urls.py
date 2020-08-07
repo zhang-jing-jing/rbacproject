@@ -24,5 +24,7 @@ urlpatterns = [
     path('getUserList', myViews.getUserList),
     path('getRoleList', myViews.getRoleList),
     path('getPermissionList', myViews.getPermissionList),
+    path('addPermission',myViews.addPermission),
+    path('deletePermission', myViews.deletePermission),
     path('user/addUser',myViews.addUser)
 ]

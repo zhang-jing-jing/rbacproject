@@ -1,12 +1,13 @@
 """views"""
 from django.shortcuts import render,redirect
 from django.http import HttpResponse    # 引用HttpResponse类
+from django.http import QueryDict
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 import json,datetime
 from datetime import date
-from app.models import user,role,permission
+from app.models import user,role,permission,user_role
 
 #验证是否登录的装饰器
 def check_user(func):
@@ -110,11 +111,18 @@ def addUser(request):
     userDto.user_name = request.POST.get('user_name')
     userDto.phone = request.POST.get('phone')
     userDto.email = request.POST.get('email')
-    print('_______________',request.POST.get('account'))
-    print('userDto',userDto.account)
     userDto.save()
-    print('++++++++++++++++',userDto.user_id)
+    roleIds = request.POST.get('role')
+    for  i in roleIds:
+        RoleDto = role.objects.filter(role_id=1).first()
+        userRoleDto = user_role()
+        userRoleDto.save()
+        userRoleDto.user_id.add(userDto)
+        userRoleDto.role_id.add(RoleDto)
+        userRoleDto.save()
     reponse={}
+    reponse['status'] = 0
+    reponse['message'] = "添加成功"
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 def getRoleList(request):
@@ -140,6 +148,25 @@ def getRoleList(request):
         reponse['message'] = "登录失效"
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
+def getPermissionById(pid):
+    permissionList = permission.objects.filter(pid=pid)
+    if permissionList.count() > 0:
+        tempList = []
+        for t in permissionList:
+            children = permission.objects.filter(pid=t.permission_id)
+            childrenList = []
+            if children.count() > 0:
+                childrenList = getPermissionById(t.permission_id)
+            temp = {
+                'permission_id': t.permission_id,
+                'pid': t.pid,
+                'permission_name': t.permission_name,
+                'permission_dec': t.permission_dec,
+                'leafCount': children.count(),
+                'children': childrenList
+            }
+            tempList.append(temp)
+        return tempList
 
 def getPermissionList(request):
     reponse = {
@@ -148,17 +175,44 @@ def getPermissionList(request):
     isLogin = request.session['is_login']
     if isLogin:
         reponse['status'] = 0
-        permissionList = permission.objects.all()
-        if permissionList.count() > 0:
-            for t in permissionList:
-                temp = {
-                    'permission_id': t.permission_id,
-                    'pid': t.pid,
-                    'permission_name': t.permission_name,
-                    'permission_dec': t.permission_dec
-                }
-                reponse['list'].append(temp)
+        reponse['list'] = getPermissionById(0)
     else:
         reponse['status'] = 600
         reponse['message'] = "登录失效"
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+
+def addPermission(request):
+    if request.method == 'POST':
+        permission_name = request.POST.get('permission_name')
+        permission_dec = request.POST.get('permission_dec')
+        pid = request.POST.get('pid')
+        if permission_name is not "":
+            permissDto = permission(permission_name=permission_name, permission_dec=permission_dec, pid=pid)
+            permissDto.save()
+            reponse = {}
+            if permissDto.permission_id:
+                reponse['status'] = 0
+                reponse['message'] = '添加成功'
+                reponse['list'] = {
+                    'permission_id': permissDto.permission_id,
+                    'permission_name': permissDto.permission_name,
+                    'permission_dec': permissDto.permission_dec,
+                    'leafCount':0,
+                    'children':[]
+                }
+            else:
+                reponse['status'] = 600
+                reponse['message'] = '添加失败'
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+
+def deletePermission(request):
+    if request.method == 'DELETE':
+        DELETE = QueryDict(request.body)
+        d_id = DELETE.get('permission_id')
+        delete_dto = permission.objects.filter(permission_id=d_id).first()
+        reponse = {}
+        if delete_dto:
+            delete_dto.delete()
+            reponse['status'] = 0
+            reponse['message'] = '删除成功'
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
