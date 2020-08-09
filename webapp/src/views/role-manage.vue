@@ -16,7 +16,32 @@
         prop="create_time"
         label="创建时间">
       </el-table-column>
+       <el-table-column
+        prop="permission"
+        label="权限">
+         <template slot-scope="scope">
+             <span v-for="(item,index) in scope.row.permission" :key="index">
+                {{item[1]}},
+             </span>
+        </template> 
+      </el-table-column>
+      <el-table-column
+        label="修改权限">
+        <template slot-scope="scope">
+            <el-button @click="handleUpdatePermission(scope.row)">修改权限</el-button>
+        </template>    
+      </el-table-column>
     </el-table>
+    <el-dialog title="提示"
+        :visible.sync="dialogVisible"
+        width="30%">
+          <el-tree ref="tree" node-key="permission_id" :props="props" show-checkbox :data="permissionData" highlight-current default-expand-all>
+        </el-tree>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="updatePermission">确 定</el-button>
+        </span>
+</el-dialog>
   </section>
 </template>
 
@@ -24,11 +49,22 @@
 export default {
     data(){
         return {
-            tableData:[]
+            props: {
+              label: 'permission_name',
+              isLeaf: function(data) {
+                return !(data.leafCount)
+             },
+             children:'children'
+            },
+            tableData:[],
+            permissionData:[],
+            currentRole:{},
+            dialogVisible:false
         }
     },
     mounted(){
-      this.loadData()
+      this.loadData();
+      this.loadPermission()
     },
     methods:{
         loadData(){
@@ -40,6 +76,49 @@ export default {
                     }
                 }
 
+            })
+        },
+        loadPermission(){
+          this.$axios.get('/apis/getPermissionList').then(res=>{
+                if (res.status === 200) {
+                    if(res.data.status === 0){
+                        this.permissionData = res.data.list
+                    }
+                }
+            })
+        },
+        handleUpdatePermission(row){
+            console.log(row)
+            this.dialogVisible = true;
+            this.currentRole = row;
+            let temp = []
+            if(this.currentRole.permission.length > 0){
+                this.currentRole.permission.forEach(element => {
+                    temp.push(element[0])
+                });
+            }
+            this.$nextTick(function(){
+                this.$refs.tree.setCheckedKeys(temp)
+            })
+        },
+        updatePermission(){
+            // console.log(this.$refs.tree.getCheckedKeys())
+            let per_ids = this.$refs.tree.getCheckedKeys().join(',')
+            let param = new URLSearchParams()
+            param.append('role_id',this.currentRole.role_id)
+            param.append('permission_ids',per_ids)
+            if(per_ids.length === 0){
+                return
+            }
+            this.$axios.post('/apis/role/addRolePermission',param).then(res=>{
+                if(res.status === 200 && res.data.status === 0){
+                    this.$message({
+                      message: res.data.message,
+                      type: 'success'
+                  });
+                }
+                this.dialogVisible = false;
+                this.loadData();
             })
         }
     }

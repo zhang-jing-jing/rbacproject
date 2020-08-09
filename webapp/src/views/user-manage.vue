@@ -61,13 +61,6 @@
               </template>
             </el-checkbox-group>
           </el-form-item>
-          <el-form-item label="权限">
-            <el-checkbox-group v-model="UserForm.permission">
-              <template v-for="item in permissionData">
-                <el-checkbox :key="item.permission_id" :label="item.permission_id">{{item.permission_name}}</el-checkbox>
-              </template>
-            </el-checkbox-group>
-          </el-form-item>
         </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
@@ -139,7 +132,6 @@ export default {
           param.append('phone',this.UserForm.phone)
           param.append('email',this.UserForm.email)
           param.append('role',this.UserForm.role.join(','))
-          param.append('permission',this.UserForm.permission.join(','))
           this.$axios.post('/apis/user/addUser',param).then(res=>{
             console.log(res)
           })

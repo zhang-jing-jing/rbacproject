@@ -113,6 +113,13 @@ export default {
           param.append('permission_id',data.permission_id)
           this.$axios.delete('/apis/deletePermission',{data: param}).then(res=>{
             console.log(res)
+            if(res.status === 200 && res.data.status === 0){
+                 this.$message({
+                      message: res.data.message,
+                      type: 'success'
+                  });
+                  this.loadData()
+            }
           })
         }
     }

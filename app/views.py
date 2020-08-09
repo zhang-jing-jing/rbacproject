@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 import json,datetime
 from datetime import date
-from app.models import user,role,permission,user_role
+from app.models import user,role,permission,user_role,role_permission
 
 #验证是否登录的装饰器
 def check_user(func):
@@ -135,18 +135,43 @@ def getRoleList(request):
         roleList = role.objects.all()
         if roleList.count() > 0:
             for t in roleList:
+                per_dto = role_permission.objects.filter(role_id=t.role_id)
+                per = []
+                for item in per_dto:
+                    tempIds,tempName = [(i.permission_id,i.permission_name) for i in item.permission_id.all()][0]
+                    per.append((tempIds,tempName))
                 temp = {
                     'role_id': t.role_id,
                     'pid': t.pid,
                     'role_name': t.role_name,
                     'create_time': t.create_time,
-                    'role_dec': t.role_dec
+                    'role_dec': t.role_dec,
+                    'permission':per
                 }
                 reponse['list'].append(temp)
     else:
         reponse['status'] = 600
         reponse['message'] = "登录失效"
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+
+def addRolePermission(request):
+    if request.method == 'POST':
+        role_id = request.POST.get('role_id')
+        per_list = request.POST.get('permission_ids').split(',')
+        role_permission.objects.filter(role_id=role_id).delete()
+        roleDto = role.objects.filter(role_id=role_id).first()
+        for t in per_list:
+            rolePerDto = role_permission(permission_type=0)
+            rolePerDto.save()
+            permissionDto = permission.objects.filter(permission_id = t).first()
+            rolePerDto.role_id.add(roleDto)
+            rolePerDto.permission_id.add(permissionDto)
+            rolePerDto.save()
+        reponse={}
+        reponse['status'] = 0
+        reponse['message'] = "添加成功"
+        return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+        
 
 def getPermissionById(pid):
     permissionList = permission.objects.filter(pid=pid)
