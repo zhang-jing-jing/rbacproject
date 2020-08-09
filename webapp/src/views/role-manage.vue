@@ -1,9 +1,12 @@
 <template>
   <section>
       <h1>角色管理</h1>
-       <el-table
-      :data="tableData"
-      style="width: 100%">
+      <div>
+            <el-button @click="addRole">添加角色</el-button> 
+            <el-button  @click="deleteRole">删除角色</el-button> 
+      </div>
+       <el-table :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column
         prop="role_name"
         label="角色名称">
@@ -32,7 +35,7 @@
         </template>    
       </el-table-column>
     </el-table>
-    <el-dialog title="提示"
+    <el-dialog title="修改权限"
         :visible.sync="dialogVisible"
         width="30%">
           <el-tree ref="tree" node-key="permission_id" :props="props" show-checkbox :data="permissionData" highlight-current default-expand-all>
@@ -41,7 +44,13 @@
             <el-button @click="dialogVisible = false">取 消</el-button>
             <el-button type="primary" @click="updatePermission">确 定</el-button>
         </span>
-</el-dialog>
+    </el-dialog>
+    <el-dialog title="添加角色" :visible.sync="addDialogVisible" width="700px">
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="addDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="confirmAddRole">确 定</el-button>
+        </span>
+    </el-dialog>
   </section>
 </template>
 
@@ -59,7 +68,9 @@ export default {
             tableData:[],
             permissionData:[],
             currentRole:{},
-            dialogVisible:false
+            dialogVisible:false,
+            addDialogVisible:false,
+            selectRole:[]
         }
     },
     mounted(){
@@ -120,6 +131,28 @@ export default {
                 this.dialogVisible = false;
                 this.loadData();
             })
+        },
+        handleSelectionChange(val){
+            this.selectRole = val;
+            console.log('selectRole++++++',this.selectRole)
+        },
+        addRole(){
+            this.addDialogVisible = true;
+        },
+        deleteRole(){
+              this.$confirm('删除所选角色？', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消'
+            }).then(() => {
+                this.$message({
+                    type: 'success',
+                    message: '删除成功!'
+                });
+            }).catch(() => {
+            });
+        },
+        confirmAddRole(){
+
         }
     }
 }

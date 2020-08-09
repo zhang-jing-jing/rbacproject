@@ -1,7 +1,7 @@
 <template>
   <section>
     <el-menu :default-active="activeIndex" class="el-menu-demo" 
-    background-color="#334272" text-color="#fff" active-text-color="#ffd04b"
+    background-color="#334272" text-color="#fff" active-text-color="#ffd04b" @select="handleSelect"
     mode="horizontal">
         <el-menu-item>------------logo---------</el-menu-item>
         <el-menu-item index="userManage" @click="menu('/user-manage')">用户管理</el-menu-item>
@@ -28,6 +28,9 @@ export default {
             return this.$store.state.user
         }
     },
+    mounted(){
+        this.activeIndex = this.$store.state.activeIndex
+    },
     methods:{
         menu(path){
             this.$router.push({path:path})
@@ -38,6 +41,9 @@ export default {
                     this.$router.push({path:'/'})
                 }
             })
+        },
+        handleSelect(index){
+            this.$store.commit('setActiveIndex',index)
         }
     }
 }

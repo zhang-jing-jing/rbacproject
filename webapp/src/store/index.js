@@ -6,7 +6,8 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     user:{},
-    username:''
+    username:'',
+    activeIndex:''
   },
   mutations: {
     saveUser(state,user){
@@ -14,6 +15,9 @@ export default new Vuex.Store({
       state.user = user
       state.username = user.user_name
       console.log(state)
+    },
+    setActiveIndex(state,index){
+      state.activeIndex = index
     }
   },
   actions: {},
