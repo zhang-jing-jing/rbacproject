@@ -27,5 +27,6 @@ urlpatterns = [
     path('addPermission',myViews.addPermission),
     path('deletePermission', myViews.deletePermission),
     path('user/addUser',myViews.addUser),
-    path('role/addRolePermission',myViews.addRolePermission)
+    path('role/updateRolePermission', myViews.updateRolePermission),
+    path('role/addRole', myViews.addRole)
 ]

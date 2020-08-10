@@ -96,6 +96,13 @@ export default {
                 if (res.status === 200) {
                     if(res.data.status === 0){
                         this.tableData = res.data.list
+                    }else if(res.data.status === 600){
+                       this.$router.push({path:'/'})
+                    }else{
+                       this.$message({
+                          message: res.data.message,
+                          type: "error"
+                      })
                     }
                 }
 
@@ -106,6 +113,13 @@ export default {
                 if (res.status === 200) {
                     if(res.data.status === 0){
                         this.roleData = res.data.list
+                    }else if(res.data.status === 600){
+                       this.$router.push({path:'/'})
+                    }else{
+                      this.$message({
+                          message: res.data.message,
+                          type: "error"
+                      })
                     }
                 }
 
@@ -116,6 +130,13 @@ export default {
                 if (res.status === 200) {
                     if(res.data.status === 0){
                         this.permissionData = res.data.list
+                    }else if(res.data.status === 600){
+                       this.$router.push({path:'/'})
+                    }else{
+                      this.$message({
+                          message: res.data.message,
+                          type: "error"
+                      })
                     }
                 }
             })
@@ -134,6 +155,21 @@ export default {
           param.append('role',this.UserForm.role.join(','))
           this.$axios.post('/apis/user/addUser',param).then(res=>{
             console.log(res)
+            if(res.status === 200){
+              if(res.data.status === 0){
+                  this.$message({
+                      message: res.data.message,
+                      type: "success"
+                  })
+              }else if(res.data.status === 600){
+                  this.$router.push({path:'/'})
+              }else{
+                  this.$message({
+                      message: res.data.message,
+                      type: "error"
+                  })
+              }
+            }
           })
         }
     }

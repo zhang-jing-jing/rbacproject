@@ -75,6 +75,8 @@ export default {
               if (res.status === 200) {
                   if(res.data.status === 0){
                       this.tableData = res.data.list
+                  }else if(res.data.status === 600){
+                      this.$router.push({path:'/'})
                   }
               }
           })
@@ -98,6 +100,8 @@ export default {
                   });
                   self.dialogVisible = false
                   self.currentNode.children.push(res.data.list)
+                }else if(res.data.status === 600){
+                    this.$router.push({path:'/'})
                 }else{
                   self.$message({
                       message: res.data.message,
@@ -119,6 +123,8 @@ export default {
                       type: 'success'
                   });
                   this.loadData()
+            }else if(res.status === 200 && res.data.status === 600){
+                this.$router.push({path:'/'})
             }
           })
         }
