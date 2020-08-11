@@ -171,11 +171,42 @@ export default {
         addRole(){
             this.addDialogVisible = true;
         },
-        deleteRole(){
+        deleteRole(){ 
+            console.log('deleteRole++++++++',this.selectRole)
+            console.log(this.selectRole.length)
+            if(this.selectRole.length == 0){
+                this.$message({
+                    type: 'warning',
+                    message: '请选择要删除的角色!'
+                });
+                return
+            }
               this.$confirm('删除所选角色？', '提示', {
                 confirmButtonText: '确定',
                 cancelButtonText: '取消'
             }).then(() => {
+                let tempId = [];
+                this.selectRole.forEach(item=>{
+                    tempId.push(item.role_id)
+                })
+                console.log('tempIds++++++++++',tempId)
+                let param = new URLSearchParams()
+                param.append('ids',tempId.join(','))
+                this.$axios.delete('/apis/role/deleteRole',{data: param}).then(res=>{
+                    if(res.status === 200){
+                        if(res.data.status === 0){
+                            this.$message({
+                                type:"success",
+                                message:res.data.message
+                            })
+                        }else{
+                            this.$message({
+                                type:"error",
+                                message:res.data.message
+                            })
+                        }
+                    }
+                })
                 this.$message({
                     type: 'success',
                     message: '删除成功!'

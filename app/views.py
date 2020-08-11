@@ -203,7 +203,26 @@ def updateRolePermission(request):
     reponse = {}
     reponse['status'] = 0
     reponse['message'] = "添加成功"
-    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))       
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+
+@check_user
+def deleteRole(request):
+    if request.method == 'DELETE':
+        DELETE = QueryDict(request.body)
+        d_id = DELETE.get('ids').split(',')
+        reponse = {}
+        try:
+            for i in d_id:
+                delete_role = role.objects.filter(role_id=i).first()
+                if delete_role:
+                    delete_role.delete()
+        except:
+            reponse['status'] = 300
+            reponse['message'] = '删除异常'
+        else:
+            reponse['status'] = 0
+            reponse['message'] = '删除成功'
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 def getPermissionById(pid):
     permissionList = permission.objects.filter(pid=pid)
