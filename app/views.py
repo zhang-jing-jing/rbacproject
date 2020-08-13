@@ -96,23 +96,36 @@ class Users:
 @check_user
 def getUserList(request):
     reponse = {
-        'list':[]
+        'list': []
     }
-    reponse['status'] = 0
-    userList = user.objects.all()
-    if userList.count() > 0:
-        for t in userList:
-            temp = {
-                'account':t.account,
-                'user_name':t.user_name,
-                'phone':t.phone,
-                'email':t.email,
-                'create_time': getattr(t, 'create_time'),
-                'login_time':t.login_time,
-                'last_login_time':t.last_login_time,
-                'login_count':t.login_count
-            }
-            reponse['list'].append(temp)
+    try:
+        user_list = user.objects.all()
+        if user_list.count() > 0:
+            for t in user_list:
+                ur = user_role.objects.filter(user_id=t.user_id)
+                role_temp = []
+                for item in ur:
+                    temp_ids, temp_name = [(i.role_id, i.role_name)
+                                        for i in item.role_id.all()][0]
+                    role_temp.append((temp_ids, temp_name))
+                temp = {
+                    'account': t.account,
+                    'user_name': t.user_name,
+                    'phone': t.phone,
+                    'email': t.email,
+                    'create_time': getattr(t, 'create_time'),
+                    'login_time': t.login_time,
+                    'last_login_time': t.last_login_time,
+                    'login_count': t.login_count,
+                    'user_id': t.user_id,
+                    'role': role_temp
+                }
+                reponse['list'].append(temp)
+    except:
+        reponse['status'] = 300
+        reponse['message'] = "后台错误"
+    else:
+        reponse['status'] = 0
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
@@ -138,6 +151,28 @@ def addUser(request):
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
+def deleteUser(request):
+    if request.method == 'DELETE':
+        DELETE = QueryDict(request.body)
+        d_id = DELETE.get('ids').split(',')
+        print('id+++++++++++++++++',d_id)
+        reponse = {}
+        try:
+            for i in d_id:
+                print('delete+++++++++++++++++++',i)
+                delete_user = user.objects.filter(user_id=i).first()
+                if delete_user:
+                    user_role.objects.filter(user_id=i).delete()
+                    delete_user.delete()
+        except:
+            reponse['status'] = 300
+            reponse['message'] = '删除异常'
+        else:
+            reponse['status'] = 0
+            reponse['message'] = '删除成功'
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+
+@check_user
 def getRoleList(request):
     reponse = {
         'list': []
@@ -149,7 +184,6 @@ def getRoleList(request):
             per_dto = role_permission.objects.filter(role_id=t.role_id)
             per = []
             for item in per_dto:
-                print(item.permission_id.all())
                 temp_ids, temp_name = [(i.permission_id, i.permission_name) for i in item.permission_id.all()][0]
                 per.append((temp_ids, temp_name))
             temp = {
@@ -188,21 +222,30 @@ def addRole(request):
     
 @check_user
 @post_only
-def updateRolePermission(request):
-    role_id = request.POST.get('role_id')
-    per_list = request.POST.get('permission_ids').split(',')
-    role_permission.objects.filter(role_id=role_id).delete()
-    role_dto = role.objects.filter(role_id=role_id).first()
-    for t in per_list:
-        role_per_dto = role_permission(permission_type=0)
-        role_per_dto.save()
-        permission_dto = permission.objects.filter(permission_id = t).first()
-        role_per_dto.role_id.add(role_dto)
-        role_per_dto.permission_id.add(permission_dto)
-        role_per_dto.save()
+def updateRole(request):
     reponse = {}
-    reponse['status'] = 0
-    reponse['message'] = "添加成功"
+    try:
+        role_id = request.POST.get('role_id')
+        if role_id:
+            role_dto = role.objects.filter(role_id=role_id).first()
+            role_dto.role_name = request.POST.get('role_name')
+            role_dto.role_dec = request.POST.get('role_dec')
+            role_dto.save()
+            per_list = request.POST.get('permission').split(',')
+            role_permission.objects.filter(role_id=role_id).delete()
+            for t in per_list:
+                role_per_dto = role_permission(permission_type=0)
+                role_per_dto.save()
+                permission_dto = permission.objects.filter(permission_id=t).first()
+                role_per_dto.role_id.add(role_dto)
+                role_per_dto.permission_id.add(permission_dto)
+                role_per_dto.save()
+    except:
+        reponse['status'] = 300
+        reponse['message'] = "修改异常"
+    else:
+        reponse['status'] = 0
+        reponse['message'] = "修改成功"
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
@@ -215,6 +258,7 @@ def deleteRole(request):
             for i in d_id:
                 delete_role = role.objects.filter(role_id=i).first()
                 if delete_role:
+                    role_permission.objects.filter(role_id=i).delete()
                     delete_role.delete()
         except:
             reponse['status'] = 300

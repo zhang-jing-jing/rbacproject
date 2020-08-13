@@ -3,7 +3,7 @@
     <el-menu :default-active="activeIndex" class="el-menu-demo" 
     background-color="#334272" text-color="#fff" active-text-color="#ffd04b" @select="handleSelect"
     mode="horizontal">
-        <el-menu-item>------------logo---------</el-menu-item>
+        <el-menu-item style="margin-right:60px">RBAC管理系统</el-menu-item>
         <el-menu-item index="userManage" @click="menu('/user-manage')">用户管理</el-menu-item>
         <el-menu-item index="permissionManage" @click="menu('/permission-manage')">权限管理</el-menu-item>
         <el-menu-item index="roleManage" @click="menu('/role-manage')">角色管理</el-menu-item>
@@ -38,6 +38,7 @@ export default {
         logout(){
             this.$axios.post('/apis/logout').then(res=>{
                 if(res.status == 200 && res.data.status == 0){
+                    this.$store.commit('setActiveIndex',"userManage")
                     this.$router.push({path:'/'})
                 }
             })

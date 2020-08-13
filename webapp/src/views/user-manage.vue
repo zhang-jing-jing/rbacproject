@@ -1,10 +1,15 @@
 <template>
   <section>
       <h1>用户管理</h1>
+      <div>
       <el-button @click="addUser">添加用户</el-button>
+      <el-button @click="delUser">删除用户</el-button>
+      </div>
+
        <el-table
       :data="tableData"
-      style="width: 100%">
+      style="width: 100%" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column
         prop="account"
         label="账号">
@@ -21,6 +26,15 @@
         prop="email"
         label="邮箱">
       </el-table-column>
+      <el-table-column
+        prop="role"
+        label="角色">
+          <template slot-scope="scope">
+             <span v-for="(item,index) in scope.row.role" :key="index">
+                {{item[1]}}
+             </span>
+        </template> 
+      </el-table-column>
        <el-table-column
         prop="login_count"
         label="登录次数">
@@ -33,9 +47,15 @@
         prop="last_login_time"
         label="上次登录时间">
       </el-table-column>
+      <el-table-column
+        label="操作">
+        <template slot-scope="scope">
+            <el-button @click="handleUpdateUser(scope.row)">修改</el-button>
+        </template>    
+      </el-table-column>
     </el-table>
     <el-dialog
-      title="添加用户"
+      :title="dialogTitle"
       :visible.sync="dialogVisible"
       width="700px">
         <el-form style="width:80%;margin:0 auto;" ref="UserForm" :model="UserForm" label-width="80px">
@@ -78,10 +98,16 @@ export default {
             roleData:[],
             permissionData:[],
             UserForm:{
-              role:[],
-              permission:[]
+              account:'',
+              password:'',
+              user_name:'',
+              phone:'',
+              email:'',
+              role:[]
             },
             dialogVisible:false,
+            selectUser:[],
+            dialogTitle:'添加用户'
         }
     },
     mounted(){
@@ -90,6 +116,47 @@ export default {
       this.loadPermission()
     },
     methods:{
+        delUser(){
+          if(this.selectUser.length == 0){
+                this.$message({
+                    type: 'warning',
+                    message: '请选择要删除的用户!'
+                });
+                return
+            }
+              this.$confirm('删除所选用户？', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消'
+            }).then(() => {
+                let tempId = [];
+                this.selectUser.forEach(item=>{
+                    tempId.push(item.user_id)
+                })
+                let param = new URLSearchParams()
+                param.append('ids',tempId.join(','))
+                this.$axios.delete('/apis/user/deleteUser',{data: param}).then(res=>{
+                    if(res.status === 200){
+                        if(res.data.status === 0){
+                            this.$message({
+                                type:"success",
+                                message:res.data.message
+                            })
+                            this.loadData()
+                        }else{
+                            this.$message({
+                                type:"error",
+                                message:res.data.message
+                            })
+                        }
+                    }
+                })
+            }).catch(() => {
+            });
+        },
+        handleSelectionChange(val){
+            this.selectUser = val;
+            console.log('this.selectUser++++++++++++++',this.selectUser);
+        },
         loadData(){
             // let param = new URLSearchParams()
             this.$axios.get('/apis/getUserList').then(res=>{
@@ -161,6 +228,8 @@ export default {
                       message: res.data.message,
                       type: "success"
                   })
+                  this.dialogVisible = false;
+                  this.loadData()
               }else if(res.data.status === 600){
                   this.$router.push({path:'/'})
               }else{
@@ -171,6 +240,16 @@ export default {
               }
             }
           })
+        },
+        handleUpdateUser(row){
+          this.dialogTitle = "修改用户信息"
+          this.dialogVisible = true;
+          this.UserForm = row;
+          let temp = [];
+          row.role.forEach(item=>{
+              temp.push(item[0])
+          })
+          this.UserForm.role = temp;
         }
     }
 }
