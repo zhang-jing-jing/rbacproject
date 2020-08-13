@@ -245,10 +245,13 @@ export default {
           this.dialogTitle = "修改用户信息"
           this.dialogVisible = true;
           this.UserForm = row;
-          let temp = [];
-          row.role.forEach(item=>{
+          console.log(this.UserForm.role)
+          let temp = []
+          if(this.UserForm.role.length > 0){
+            this.UserForm.role.forEach(item=>{
               temp.push(item[0])
-          })
+            })
+          }
           this.UserForm.role = temp;
         }
     }
