@@ -244,15 +244,17 @@ export default {
         handleUpdateUser(row){
           this.dialogTitle = "修改用户信息"
           this.dialogVisible = true;
-          this.UserForm = row;
-          console.log(this.UserForm.role)
-          let temp = []
-          if(this.UserForm.role.length > 0){
-            this.UserForm.role.forEach(item=>{
-              temp.push(item[0])
-            })
+          this.UserForm.account = row.account;
+          this.UserForm.password = row.password;
+          this.UserForm.user_name = row.user_name;
+          this.UserForm.email = row.email;
+          this.UserForm.phone = row.phone;
+          let temp = row.role;
+          let name = []
+          for (let i = 0; i < temp.length; i++) {
+            name.push(temp[i][0])
           }
-          this.UserForm.role = temp;
+          this.UserForm.role = name;
         }
     }
 }

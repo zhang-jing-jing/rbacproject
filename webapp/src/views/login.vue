@@ -71,7 +71,13 @@ export default {
 
 <style lang="scss">
 .login-page{
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 700px;
+    background: url('../assets/bg.jpg');
     .login-box{
+        background: #ffffff;
         width: 400px;
         position:absolute;
         top: 40%;
