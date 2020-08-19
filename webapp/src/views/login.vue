@@ -4,10 +4,10 @@
             <div class="title">欢迎登录</div>
             <el-form ref="form" :model="form" :rules="rules">
                 <el-form-item  prop="username">
-                    <el-input  prefix-icon="el-icon-user-solid" placeholder="请输入用户名" v-model="form.username"></el-input>
+                    <el-input  prefix-icon="el-icon-user-solid" placeholder="请输入用户名" v-model="form.username"  @keyup.enter.native="login"></el-input>
                 </el-form-item>
                 <el-form-item  prop="password">
-                    <el-input  prefix-icon="el-icon-lock" placeholder="请输入密码" type="password" v-model="form.password"></el-input>
+                    <el-input  prefix-icon="el-icon-lock" placeholder="请输入密码" type="password" v-model="form.password"  @keyup.enter.native="login"></el-input>
                 </el-form-item>
                  <el-form-item>
                     <el-button type="primary" class="login-btn" @click="login">登录</el-button>

@@ -8,6 +8,8 @@ from django.contrib.auth import authenticate, login, logout
 import json,datetime
 from datetime import date
 from app.models import user,role,permission,user_role,role_permission
+from django.core.paginator import Paginator
+from django.contrib.auth.hashers import make_password, check_password
 
 #验证是否登录的装饰器
 def check_user(func):
@@ -55,7 +57,7 @@ class Users:
                 users = user.objects.filter(account=username)
                 if users.count() > 0:
                     userDto = users.first()
-                    if userDto.password == password:
+                    if check_password(password, userDto.password):
                         request.session["is_login"] = True
                         request.session["login_user"] = username
                         reponse['status'] = 0
@@ -99,55 +101,78 @@ def getUserList(request):
         'list': []
     }
     try:
-        user_list = user.objects.all()
-        if user_list.count() > 0:
-            for t in user_list:
-                ur = user_role.objects.filter(user_id=t.user_id)
-                role_temp = []
-                for item in ur:
-                    temp_ids, temp_name = [(i.role_id, i.role_name)
-                                        for i in item.role_id.all()][0]
-                    role_temp.append((temp_ids, temp_name))
-                temp = {
-                    'account': t.account,
-                    'user_name': t.user_name,
-                    'phone': t.phone,
-                    'email': t.email,
-                    'create_time': getattr(t, 'create_time'),
-                    'login_time': t.login_time,
-                    'last_login_time': t.last_login_time,
-                    'login_count': t.login_count,
-                    'user_id': t.user_id,
-                    'role': role_temp
-                }
-                reponse['list'].append(temp)
+        if request.method == "GET":
+            pagesize = request.GET.get('pagesize', default=5)
+            # 当前页数
+            pindex = request.GET.get('index', default=1)
+            user_list = user.objects.all().order_by('user_id')
+            paginator = Paginator(user_list, pagesize)
+            current_list = paginator.page(pindex)
+            if len(current_list) > 0:
+                for t in current_list:
+                    ur = user_role.objects.filter(user_id=t.user_id)
+                    role_temp = []
+                    for item in ur:
+                        temp_ids, temp_name = [(i.role_id, i.role_name)
+                                            for i in item.role_id.all()][0]
+                        role_temp.append((temp_ids, temp_name))
+                    temp = {
+                        'account': t.account,
+                        'user_name': t.user_name,
+                        'phone': t.phone,
+                        'email': t.email,
+                        'create_time': getattr(t, 'create_time'),
+                        'login_time': t.login_time,
+                        'last_login_time': t.last_login_time,
+                        'login_count': t.login_count,
+                        'user_id': t.user_id,
+                        'role': role_temp
+                    }
+                    reponse['list'].append(temp)
     except:
         reponse['status'] = 300
-        reponse['message'] = "后台错误"
+        reponse['message'] = "后台错误,请联系管理员。"
     else:
         reponse['status'] = 0
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
 def addUser(request):
-    user_dto = user()
-    user_dto.account = request.POST.get('account')
-    user_dto.password = request.POST.get('password')
-    user_dto.user_name = request.POST.get('user_name')
-    user_dto.phone = request.POST.get('phone')
-    user_dto.email = request.POST.get('email')
-    user_dto.save()
-    role_ids = request.POST.get('role')
-    for i in role_ids:
-        role_dto = role.objects.filter(role_id=1).first()
-        user_role_dto = user_role()
-        user_role_dto.save()
-        user_role_dto.user_id.add(user_dto)
-        user_role_dto.role_id.add(role_dto)
-        user_role_dto.save()
     reponse = {}
-    reponse['status'] = 0
-    reponse['message'] = "添加成功"
+    update = False
+    try:
+        user_id = request.POST.get('user_id')
+        if int(user_id) > -1:
+            update = True
+            user_dto = user.objects.filter(user_id=user_id).first()
+            user_role.objects.filter(user_id=user_id).delete()
+        else:
+            user_dto = user()
+        user_dto.account = request.POST.get('account')
+        if update == False:
+            user_dto.password = make_password(request.POST.get('password'))
+        user_dto.user_name = request.POST.get('user_name')
+        user_dto.phone = request.POST.get('phone')
+        user_dto.email = request.POST.get('email')
+        user_dto.save()
+        role_ids = request.POST.get('role').split(',')
+        for i in role_ids:
+            role_dto = role.objects.filter(role_id=i).first()
+            user_role_dto = user_role()
+            user_role_dto.save()
+            user_role_dto.user_id.add(user_dto)
+            user_role_dto.role_id.add(role_dto)
+            user_role_dto.save()
+    except:
+        reponse['status'] = 300
+        reponse['message'] = "添加失败"
+    else:
+        reponse['status'] = 0
+        if update:
+            message = "修改成功"
+        else:
+            message = "添加成功"
+        reponse['message'] = message
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user

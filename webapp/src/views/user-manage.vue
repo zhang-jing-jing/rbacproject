@@ -58,20 +58,20 @@
       :title="dialogTitle"
       :visible.sync="dialogVisible"
       width="700px">
-        <el-form style="width:80%;margin:0 auto;" ref="UserForm" :model="UserForm" label-width="80px">
-          <el-form-item label="账号">
+        <el-form :rules="rules" style="width:80%;margin:0 auto;" ref="UserForm" :model="UserForm" label-width="80px">
+          <el-form-item label="账号" prop="account">
             <el-input v-model="UserForm.account"></el-input>
           </el-form-item>
-          <el-form-item label="密码">
+          <el-form-item v-if="dialogTitle=='添加用户'" label="默认密码" prop="password">
             <el-input v-model="UserForm.password"></el-input>
           </el-form-item>
-          <el-form-item label="用户名">
+          <el-form-item label="用户名" prop="user_name">
             <el-input v-model="UserForm.user_name"></el-input>
           </el-form-item>
-          <el-form-item label="手机">
+          <el-form-item label="手机" prop="phone">
             <el-input v-model="UserForm.phone"></el-input>
           </el-form-item>
-          <el-form-item label="邮箱">
+          <el-form-item label="邮箱" prop="email">
             <el-input v-model="UserForm.email"></el-input>
           </el-form-item>
           <el-form-item label="角色">
@@ -107,7 +107,28 @@ export default {
             },
             dialogVisible:false,
             selectUser:[],
-            dialogTitle:'添加用户'
+            dialogTitle:'添加用户',
+            rules:{
+                account: [
+                    { required: true, message: '请输入账号', trigger: 'blur' },
+                    { min: 1, max: 10, message: '长度在1到10个字符', trigger: 'blur' }
+                ],
+                password: [
+                    { required: true, message: '请输入密码', trigger: 'change' },
+                    {pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^]{8,16}$/,message: '至少8-16个字符，至少1个大写字母，1个小写字母和1个数字', trigger: 'blur'}
+                ],
+                user_name: [
+                    { required: false, message: '请输入用户名', trigger: 'change' }
+                ],
+                phone:[
+                  { required: false, message: '请输入手机号', trigger: 'change' },
+                  {pattern:/^1[3456789]\d{9}$/,message: '手机号输入有误，请重新输入', trigger: 'blur'}
+                ],
+                email:[
+                  { required: false, message: '请输入邮箱', trigger: 'change' },
+                  {pattern: /[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\w](?:[\w-]*[\w])?\.)+[\w](?:[\w-]*[\w])?/,message: '请輸入正确的格式', trigger: 'blur'}
+                ]
+            }
         }
     },
     mounted(){
@@ -210,40 +231,47 @@ export default {
         },
         addUser(){
           this.dialogVisible = true;
+          this.dialogTitle = "添加用户";
         },
         confirmAddUser(){
-          console.log(this.UserForm);
-          let param = new URLSearchParams()
-          param.append('account',this.UserForm.account)
-          param.append('password',this.UserForm.password)
-          param.append('user_name',this.UserForm.user_name)
-          param.append('phone',this.UserForm.phone)
-          param.append('email',this.UserForm.email)
-          param.append('role',this.UserForm.role.join(','))
-          this.$axios.post('/apis/user/addUser',param).then(res=>{
-            console.log(res)
-            if(res.status === 200){
-              if(res.data.status === 0){
-                  this.$message({
-                      message: res.data.message,
-                      type: "success"
-                  })
-                  this.dialogVisible = false;
-                  this.loadData()
-              }else if(res.data.status === 600){
-                  this.$router.push({path:'/'})
-              }else{
-                  this.$message({
-                      message: res.data.message,
-                      type: "error"
-                  })
-              }
+          this.$refs['UserForm'].validate((valid) => {
+            if(valid){
+              console.log(this.UserForm);
+              let param = new URLSearchParams()
+              param.append('user_id', this.UserForm.user_id ? this.UserForm.user_id: -1)
+              param.append('account',this.UserForm.account)
+              param.append('password',this.UserForm.password)
+              param.append('user_name',this.UserForm.user_name)
+              param.append('phone',this.UserForm.phone)
+              param.append('email',this.UserForm.email)
+              param.append('role',this.UserForm.role.join(','))
+              this.$axios.post('/apis/user/addUser',param).then(res=>{
+                console.log(res)
+                if(res.status === 200){
+                  if(res.data.status === 0){
+                      this.$message({
+                          message: res.data.message,
+                          type: "success"
+                      })
+                      this.dialogVisible = false;
+                      this.loadData()
+                  }else if(res.data.status === 600){
+                      this.$router.push({path:'/'})
+                  }else{
+                      this.$message({
+                          message: res.data.message,
+                          type: "error"
+                      })
+                  }
+                }
+              })
             }
           })
         },
         handleUpdateUser(row){
           this.dialogTitle = "修改用户信息"
           this.dialogVisible = true;
+          this.UserForm.user_id = row.user_id;
           this.UserForm.account = row.account;
           this.UserForm.password = row.password;
           this.UserForm.user_name = row.user_name;
