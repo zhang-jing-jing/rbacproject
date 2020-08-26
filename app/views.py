@@ -45,44 +45,57 @@ class CJsonEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 class Users:
+    @post_only
     def login(request):
         """
         用户登录
         """
         reponse = {}
-        if request.method == 'POST':
-            username = request.POST.get('username')                         
-            password = request.POST.get('password')
-            if username is not None and password is not None:
-                users = user.objects.filter(account=username)
-                if users.count() > 0:
-                    userDto = users.first()
-                    if check_password(password, userDto.password):
-                        request.session["is_login"] = True
-                        request.session["login_user"] = username
-                        reponse['status'] = 0
-                        reponse['message'] = "登录成功"
-                        reponse['list'] = {
-                            'account': userDto.account,
-                            'user_name': userDto.user_name,
-                            'phone': userDto.phone,
-                            'email': userDto.email,
-                            'create_time': userDto.create_time,
-                            'login_time': userDto.login_time,
-                            'last_login_time': userDto.last_login_time,
-                            'login_count': userDto.login_count
-                        }
-                    else:
-                        reponse['status'] = 10
-                        reponse['message'] = "密码错误"
+        username = request.POST.get('username')                         
+        password = request.POST.get('password')
+        if username is not None and password is not None:
+            users = user.objects.filter(account=username)
+            if users.count() > 0:
+                userDto = users.first()
+                if check_password(password, userDto.password):
+                    request.session["is_login"] = True
+                    request.session["login_user"] = username
+                    login_ur = user_role.objects.filter(user_id=userDto.user_id)
+                    role_temp = []
+                    for item in login_ur:
+                        temp_ids = [i.role_id for i in item.role_id.all()][0]
+                        role_temp.append(temp_ids)
+                    for role_id in role_temp:
+                        login_rp = role_permission.objects.filter(role_id=role_id)
+                        permission_temp = []
+                        for rp_item in login_rp:
+                            for i in rp_item.permission_id.all():
+                                permission_temp.append(i.permission_name)
+                    reponse['status'] = 0
+                    reponse['message'] = "登录成功"
+                    reponse['list'] = {
+                        'account': userDto.account,
+                        'user_name': userDto.user_name,
+                        'phone': userDto.phone,
+                        'email': userDto.email,
+                        'create_time': userDto.create_time,
+                        'login_time': userDto.login_time,
+                        'last_login_time': userDto.last_login_time,
+                        'login_count': userDto.login_count,
+                        'permission': permission_temp
+                    }
                 else:
-                    reponse['status'] = 20
-                    reponse['message'] = '用户不存在'
+                    reponse['status'] = 10
+                    reponse['message'] = "密码错误"
             else:
-                reponse['status'] = 400
-                reponse['message'] = "参数错误"
+                reponse['status'] = 20
+                reponse['message'] = '用户不存在'
+        else:
+            reponse['status'] = 400
+            reponse['message'] = "参数错误"
         return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
-    
+
+    @post_only
     def logout(request):
         """
         用户退出
@@ -129,6 +142,7 @@ def getUserList(request):
                         'role': role_temp
                     }
                     reponse['list'].append(temp)
+                    reponse['total'] = user_list.count()
     except:
         reponse['status'] = 300
         reponse['message'] = "后台错误,请联系管理员。"
@@ -176,15 +190,13 @@ def addUser(request):
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
-def deleteUser(request):
+def deleteUser(request): 
     if request.method == 'DELETE':
         DELETE = QueryDict(request.body)
         d_id = DELETE.get('ids').split(',')
-        print('id+++++++++++++++++',d_id)
         reponse = {}
         try:
             for i in d_id:
-                print('delete+++++++++++++++++++',i)
                 delete_user = user.objects.filter(user_id=i).first()
                 if delete_user:
                     user_role.objects.filter(user_id=i).delete()
@@ -195,6 +207,38 @@ def deleteUser(request):
         else:
             reponse['status'] = 0
             reponse['message'] = '删除成功'
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+
+@check_user
+@post_only
+def queryUser(request):
+    reponse = {}
+    try:
+        query_value = request.POST.get('queryValue')
+        query_content = request.POST.get('queryText')
+        if query_value != "" and query_content != "":
+            print(query_value)
+            if query_value == "user_name":
+                user_dto = user.objects.filter(user_name__contains=query_content)
+            elif query_value == "account":
+                user_dto = user.objects.filter(account__contains=query_content)
+            elif query_value == "phone":
+                user_dto = user.objects.filter(phone__contains=query_content)
+            elif query_value == "email":
+                user_dto = user.objects.filter(email__contains=query_content)
+            elif query_value == "role":
+                role_dto = role.objects.filter(role_name__contains=query_content)
+                for i in role_dto:
+                    ur = user_role.objects.filter(role_id=i.role_id)
+                    print('ur++++++++++++', ur.count())
+                    for ii in ur:
+                        print('1111',ii.user_id.all().count())
+                    pass
+                
+            print(user_dto.count())
+            pass
+    except:
+        print('except+++')
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
@@ -209,8 +253,9 @@ def getRoleList(request):
             per_dto = role_permission.objects.filter(role_id=t.role_id)
             per = []
             for item in per_dto:
-                temp_ids, temp_name = [(i.permission_id, i.permission_name) for i in item.permission_id.all()][0]
-                per.append((temp_ids, temp_name))
+                if item.permission_id.all().count() > 0:
+                    temp_ids, temp_name = [(i.permission_id, i.permission_name) for i in item.permission_id.all()][0]
+                    per.append((temp_ids, temp_name))
             temp = {
                 'role_id': t.role_id,
                 'pid': t.pid,

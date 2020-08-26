@@ -1,12 +1,24 @@
 <template>
   <section>
       <h1>用户管理</h1>
-      <div>
-      <el-button @click="addUser">添加用户</el-button>
-      <el-button @click="delUser">删除用户</el-button>
-      </div>
+      <el-row>
+        <el-col :span="18">
+          <el-button size="small" v-if="permission.indexOf('新增用户') > -1" type="primary" @click="addUser">添加用户</el-button>
+          <el-button size="small" v-if="permission.indexOf('删除用户') > -1" type="primary" @click="delUser">删除用户</el-button>
+        </el-col>
+        <el-col :span="6">
+              <el-input size="small" placeholder="请输入内容" v-model.trim="queryContent" class="input-with-select">
+                <el-select v-model="querySelect" style="width:100px" slot="prepend" placeholder="请选择">
+                  <template v-for="item in queryOption">
+                    <el-option :key="item.value" :label="item.label" :value="item.value"></el-option>
+                  </template>  
+                </el-select>
+                <el-button slot="append" icon="el-icon-search" @click="handleFilterUser"></el-button>
+              </el-input>
+        </el-col>
+      </el-row>
 
-       <el-table
+       <el-table v-if="permission.indexOf('查看用户') > -1"
       :data="tableData"
       style="width: 100%" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"></el-table-column>
@@ -50,10 +62,21 @@
       <el-table-column
         label="操作">
         <template slot-scope="scope">
-            <el-button @click="handleUpdateUser(scope.row)">修改</el-button>
+            <el-button v-if="permission.indexOf('编辑用户') > -1" @click="handleUpdateUser(scope.row)">修改</el-button>
         </template>    
       </el-table-column>
     </el-table>
+    <div>
+        <el-pagination style="text-align: right;"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :page-sizes="[10, 20, 30]"
+          layout="sizes, prev, pager, next"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange">
+        </el-pagination>
+    </div>
     <el-dialog
       :title="dialogTitle"
       :visible.sync="dialogVisible"
@@ -128,15 +151,56 @@ export default {
                   { required: false, message: '请输入邮箱', trigger: 'change' },
                   {pattern: /[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\w](?:[\w-]*[\w])?\.)+[\w](?:[\w-]*[\w])?/,message: '请輸入正确的格式', trigger: 'blur'}
                 ]
-            }
+            },
+            permission:'',
+            total:0,
+            pageSize:10,
+            currentPage:1,
+            queryContent:'',
+            querySelect:'',
+            queryOption:[
+              {label:'角色',value:'role'},
+              {label:'账号',value:'account'},
+              {label:'用户名',value:'user_name'},
+              {label:'电话',value:'phone'},
+              {label:'邮箱',value:'email'}
+            ]
         }
     },
     mounted(){
       this.loadData()
       this.loadRole()
       this.loadPermission()
+      this.permission = this.$store.state.user.permission.join(',')
     },
     methods:{
+        handleFilterUser(){
+          if (this.querySelect == "") {
+              this.$message({
+                  type: 'warning',
+                  message: '请选择查询字段!'
+              });
+          }else if (this.queryContent == "") {
+              this.$message({
+                  type: 'warning',
+                  message: '请输入查询内容!'
+              });
+          }else{
+              let param = new URLSearchParams()
+              param.append('queryValue',this.querySelect)
+              param.append('queryText',this.queryContent)
+              this.$axios.post('/apis/user/queryUser',param).then(res=>{
+                  console.log(res)
+              })
+          }
+        },
+        handleSizeChange(val) {
+          this.pageSize = val
+        },
+        handleCurrentChange(val) {
+          this.currentPage = val
+          this.loadData()
+        },
         delUser(){
           if(this.selectUser.length == 0){
                 this.$message({
@@ -180,9 +244,17 @@ export default {
         },
         loadData(){
             // let param = new URLSearchParams()
-            this.$axios.get('/apis/getUserList').then(res=>{
+            // param.append('index',this.currentPage)
+            // param.append('pagesize', this.pageSize)
+            this.$axios.get('/apis/getUserList',{
+                params:{
+                  index: this.currentPage,
+                  pagesize: this.pageSize
+                }
+            }).then(res=>{
                 if (res.status === 200) {
                     if(res.data.status === 0){
+                        this.total = res.data.total;
                         this.tableData = res.data.list
                     }else if(res.data.status === 600){
                        this.$router.push({path:'/'})

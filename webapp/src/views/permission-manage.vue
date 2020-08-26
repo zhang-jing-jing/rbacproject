@@ -3,12 +3,12 @@
       <h1>权限管理</h1>
       <el-row>
         <el-col :span="12">
-          <el-tree :props="props"
+          <el-tree v-if="permission.indexOf('查看权限') > -1" :props="props"
               :data="tableData" highlight-current default-expand-all>
               <span class="custom-tree-node" slot-scope="{ node, data }">
               <span class="tree-label">{{ node.label }}</span>
               <span>
-                <el-button icon="el-icon-plus"
+                <el-button v-if="permission.indexOf('添加权限') > -1" icon="el-icon-plus"
                   type="text"
                   size="mini"
                   @click.stop="() => append(node,data)">
@@ -20,7 +20,7 @@
                     title="你确定删除该节点？"
                     @onConfirm="remove(node, data)"
                   >
-                  <el-button icon="el-icon-delete" slot="reference"
+                  <el-button v-if="permission.indexOf('删除权限') > -1" icon="el-icon-delete" slot="reference"
                       type="text"
                       size="mini">
                     </el-button>
@@ -63,11 +63,13 @@ export default {
             tableData:[],
             currentNode:{},
             dialogVisible:false,
-            perForm:{}
+            perForm:{},
+            permission:''
         }
     },
     mounted(){
       this.loadData()
+      this.permission = this.$store.state.user.permission.join(',')
     },
     methods:{
         loadData(){

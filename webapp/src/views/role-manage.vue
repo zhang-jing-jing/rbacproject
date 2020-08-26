@@ -2,10 +2,10 @@
   <section>
       <h1>角色管理</h1>
       <div>
-            <el-button @click="addRole">添加角色</el-button> 
-            <el-button  @click="deleteRole">删除角色</el-button> 
+            <el-button size="small" type="primary" v-if="permission.indexOf('新增角色') > -1" @click="addRole">添加角色</el-button> 
+            <el-button size="small" type="primary" v-if="permission.indexOf('删除角色') > -1" @click="deleteRole">删除角色</el-button> 
       </div>
-       <el-table :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
+       <el-table v-if="permission.indexOf('查看角色') > -1" :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column
         prop="role_name"
@@ -31,7 +31,7 @@
       <el-table-column
         label="操作">
         <template slot-scope="scope">
-            <el-button @click="handleUpdateRole(scope.row)">修改</el-button>
+            <el-button v-if="permission.indexOf('编辑角色') > -1" @click="handleUpdateRole(scope.row)">修改</el-button>
         </template>    
       </el-table-column>
     </el-table>
@@ -97,12 +97,14 @@ export default {
                     { required: false, message: '请输入角色描述', trigger: 'change' }
                 ]
             },
-            dialogTitle:'添加角色'
+            dialogTitle:'添加角色',
+            permission:''
         }
     },
     mounted(){
       this.loadData();
       this.loadPermission()
+      this.permission = this.$store.state.user.permission.join(',')
     },
     methods:{
         loadData(){
