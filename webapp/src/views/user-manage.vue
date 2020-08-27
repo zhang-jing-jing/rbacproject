@@ -186,12 +186,7 @@ export default {
                   message: '请输入查询内容!'
               });
           }else{
-              let param = new URLSearchParams()
-              param.append('queryValue',this.querySelect)
-              param.append('queryText',this.queryContent)
-              this.$axios.post('/apis/user/queryUser',param).then(res=>{
-                  console.log(res)
-              })
+              this.loadData()
           }
         },
         handleSizeChange(val) {
@@ -243,15 +238,12 @@ export default {
             console.log('this.selectUser++++++++++++++',this.selectUser);
         },
         loadData(){
-            // let param = new URLSearchParams()
-            // param.append('index',this.currentPage)
-            // param.append('pagesize', this.pageSize)
-            this.$axios.get('/apis/getUserList',{
-                params:{
-                  index: this.currentPage,
-                  pagesize: this.pageSize
-                }
-            }).then(res=>{
+            let param = new URLSearchParams()
+            param.append('index',this.currentPage)
+            param.append('pagesize', this.pageSize)
+            param.append('queryValue',this.querySelect)
+            param.append('queryText',this.queryContent)
+            this.$axios.post('/apis/getUserList',param).then(res=>{
                 if (res.status === 200) {
                     if(res.data.status === 0){
                         this.total = res.data.total;

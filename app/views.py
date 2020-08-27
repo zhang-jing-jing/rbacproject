@@ -10,6 +10,7 @@ from datetime import date
 from app.models import user,role,permission,user_role,role_permission
 from django.core.paginator import Paginator
 from django.contrib.auth.hashers import make_password, check_password
+import datetime, time
 
 #验证是否登录的装饰器
 def check_user(func):
@@ -23,7 +24,7 @@ def check_user(func):
             return response
         return func(*args, **kwargs)
     return inner
-
+    
 # 验证是否为POST请求
 def post_only(func):
     def inner(*args, **kwargs):
@@ -57,6 +58,11 @@ class Users:
             users = user.objects.filter(account=username)
             if users.count() > 0:
                 userDto = users.first()
+                userDto.login_count += 1 
+                now = datetime.datetime.now()
+                userDto.login_time = now.strptime(
+                        now.strftime("%Y-%m-%d %H:%M:%S"), '%Y-%m-%d %H:%M:%S')
+                userDto.save()
                 if check_password(password, userDto.password):
                     request.session["is_login"] = True
                     request.session["login_user"] = username
@@ -108,41 +114,81 @@ class Users:
             reponse['message'] = "退出成功"
         return HttpResponse(json.dumps(reponse, ensure_ascii=False))
 
+def queryUserList(user_dto, pagesize, pindex):
+    paginator = Paginator(user_dto, pagesize)
+    current_list = paginator.page(pindex)
+    templist = []
+    if len(current_list) > 0:
+        for t in current_list:
+            ur = user_role.objects.filter(user_id=t.user_id)
+            role_temp = []
+            for item in ur:
+                temp_ids, temp_name = [(i.role_id, i.role_name)
+                                       for i in item.role_id.all()][0]
+                role_temp.append((temp_ids, temp_name))
+            temp = {
+                'account': t.account,
+                'user_name': t.user_name,
+                'phone': t.phone,
+                'email': t.email,
+                'create_time': getattr(t, 'create_time'),
+                'login_time': t.login_time,
+                'last_login_time': t.last_login_time,
+                'login_count': t.login_count,
+                'user_id': t.user_id,
+                'role': role_temp
+            }
+            templist.append(temp)
+    return templist
+
+def queryUserById(id):
+    pass
+
 @check_user
+@post_only
 def getUserList(request):
     reponse = {
         'list': []
     }
     try:
-        if request.method == "GET":
-            pagesize = request.GET.get('pagesize', default=5)
-            # 当前页数
-            pindex = request.GET.get('index', default=1)
+        query_value = request.POST.get('queryValue', default="")
+        query_content = request.POST.get('queryText',default="")
+        pagesize = request.POST.get('pagesize', default=5)
+        # 当前页数
+        pindex = request.POST.get('index', default=1)
+        if query_value != "" and query_content != "":
+            if query_value == "user_name":
+                user_list = user.objects.filter(
+                    user_name__contains=query_content).order_by('user_id')
+            elif query_value == "account":
+                user_list = user.objects.filter(
+                    account__contains=query_content).order_by('user_id')
+            elif query_value == "phone":
+                user_list = user.objects.filter(
+                    phone__contains=query_content).order_by('user_id')
+            elif query_value == "email":
+                user_list = user.objects.filter(
+                    email__contains=query_content).order_by('user_id')
+            elif query_value == "role":
+                role_dto = role.objects.filter(role_name__contains=query_content)
+                for i in role_dto:
+                    ur = user_role.objects.filter(role_id=i.role_id)
+                    temp_list = []
+                    for ii in ur:
+                        for j in ii.user_id.all():
+                            temp = user.objects.filter(
+                                user_id=j.user_id).order_by('user_id')
+                            temp_list.append(temp)
+                    user_list = user.objects.none()
+                    for j in temp_list:
+                        user_list = user_list | j
+        else:
             user_list = user.objects.all().order_by('user_id')
-            paginator = Paginator(user_list, pagesize)
-            current_list = paginator.page(pindex)
-            if len(current_list) > 0:
-                for t in current_list:
-                    ur = user_role.objects.filter(user_id=t.user_id)
-                    role_temp = []
-                    for item in ur:
-                        temp_ids, temp_name = [(i.role_id, i.role_name)
-                                            for i in item.role_id.all()][0]
-                        role_temp.append((temp_ids, temp_name))
-                    temp = {
-                        'account': t.account,
-                        'user_name': t.user_name,
-                        'phone': t.phone,
-                        'email': t.email,
-                        'create_time': getattr(t, 'create_time'),
-                        'login_time': t.login_time,
-                        'last_login_time': t.last_login_time,
-                        'login_count': t.login_count,
-                        'user_id': t.user_id,
-                        'role': role_temp
-                    }
-                    reponse['list'].append(temp)
-                    reponse['total'] = user_list.count()
+        if user_list.count() > 0:
+            reponse['list'] = queryUserList(user_list, pagesize, pindex)
+        else:
+            reponse['list'] = []
+        reponse['total'] = user_list.count()
     except:
         reponse['status'] = 300
         reponse['message'] = "后台错误,请联系管理员。"
@@ -207,38 +253,6 @@ def deleteUser(request):
         else:
             reponse['status'] = 0
             reponse['message'] = '删除成功'
-    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
-
-@check_user
-@post_only
-def queryUser(request):
-    reponse = {}
-    try:
-        query_value = request.POST.get('queryValue')
-        query_content = request.POST.get('queryText')
-        if query_value != "" and query_content != "":
-            print(query_value)
-            if query_value == "user_name":
-                user_dto = user.objects.filter(user_name__contains=query_content)
-            elif query_value == "account":
-                user_dto = user.objects.filter(account__contains=query_content)
-            elif query_value == "phone":
-                user_dto = user.objects.filter(phone__contains=query_content)
-            elif query_value == "email":
-                user_dto = user.objects.filter(email__contains=query_content)
-            elif query_value == "role":
-                role_dto = role.objects.filter(role_name__contains=query_content)
-                for i in role_dto:
-                    ur = user_role.objects.filter(role_id=i.role_id)
-                    print('ur++++++++++++', ur.count())
-                    for ii in ur:
-                        print('1111',ii.user_id.all().count())
-                    pass
-                
-            print(user_dto.count())
-            pass
-    except:
-        print('except+++')
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
