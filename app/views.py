@@ -388,7 +388,7 @@ def addPermission(request):
         permission_name = request.POST.get('permission_name')
         permission_dec = request.POST.get('permission_dec')
         pid = request.POST.get('pid')
-        if permission_name is not "":
+        if permission_name != "":
             permissDto = permission(permission_name=permission_name, permission_dec=permission_dec, pid=pid)
             permissDto.save()
             reponse = {}
