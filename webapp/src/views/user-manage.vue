@@ -3,8 +3,8 @@
       <h1>用户管理</h1>
       <el-row>
         <el-col :span="18">
-          <el-button size="small" v-if="permission.indexOf('新增用户') > -1" type="primary" @click="addUser">添加用户</el-button>
-          <el-button size="small" v-if="permission.indexOf('删除用户') > -1" type="primary" @click="delUser">删除用户</el-button>
+          <el-button size="small" v-if="permission.indexOf('6') > -1" type="primary" @click="addUser">添加用户</el-button>
+          <el-button size="small" v-if="permission.indexOf('4') > -1" type="primary" @click="delUser">删除用户</el-button>
         </el-col>
         <el-col :span="6">
               <el-input size="small" placeholder="请输入内容" v-model.trim="queryContent" class="input-with-select">
@@ -18,7 +18,7 @@
         </el-col>
       </el-row>
 
-       <el-table v-if="permission.indexOf('查看用户') > -1"
+       <el-table v-if="permission.indexOf('3') > -1"
       :data="tableData"
       style="width: 100%" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"></el-table-column>
@@ -62,7 +62,7 @@
       <el-table-column
         label="操作">
         <template slot-scope="scope">
-            <el-button v-if="permission.indexOf('编辑用户') > -1" @click="handleUpdateUser(scope.row)">修改</el-button>
+            <el-button v-if="permission.indexOf('5') > -1" @click="handleUpdateUser(scope.row)">修改</el-button>
         </template>    
       </el-table-column>
     </el-table>

@@ -75,7 +75,7 @@ def login(request):
                     permission_temp = []
                     for rp_item in login_rp:
                         for i in rp_item.permission_id.all():
-                            permission_temp.append(i.permission_name)
+                            permission_temp.append(i.permission_id)
                 reponse['status'] = 0
                 reponse['message'] = "登录成功"
                 reponse['list'] = {
@@ -426,28 +426,46 @@ def getPermissionList(request):
 
 
 @check_user
+@post_only
 def addPermission(request):
-    if request.method == 'POST':
+    reponse = {}
+    try:
+        permission_id = request.POST.get('permission_id',-1)
         permission_name = request.POST.get('permission_name')
         permission_dec = request.POST.get('permission_dec')
-        pid = request.POST.get('pid')
-        if permission_name != "":
-            permissDto = permission(permission_name=permission_name, permission_dec=permission_dec, pid=pid)
+        if int(permission_id) <= -1:
+            pid = request.POST.get('pid')
+            if permission_name != "":
+                permissDto = permission(permission_name=permission_name, permission_dec=permission_dec, pid=pid)
+                permissDto.save()
+                reponse = {}
+                if permissDto.permission_id:
+                    reponse['status'] = 0
+                    reponse['message'] = '添加成功'
+                    reponse['list'] = {
+                        'permission_id': permissDto.permission_id,
+                        'permission_name': permissDto.permission_name,
+                        'permission_dec': permissDto.permission_dec,
+                        'leafCount':0,
+                        'children':[]
+                    }
+        else:
+            permissDto = permission.objects.filter(permission_id=permission_id).first()
+            permissDto.permission_name = permission_name
+            permissDto.permission_dec = permission_dec
             permissDto.save()
-            reponse = {}
-            if permissDto.permission_id:
-                reponse['status'] = 0
-                reponse['message'] = '添加成功'
-                reponse['list'] = {
-                    'permission_id': permissDto.permission_id,
-                    'permission_name': permissDto.permission_name,
-                    'permission_dec': permissDto.permission_dec,
-                    'leafCount':0,
-                    'children':[]
-                }
-            else:
-                reponse['status'] = 600
-                reponse['message'] = '添加失败'
+            reponse['status'] = 0
+            reponse['message'] = '修改成功'
+            reponse['list'] = {
+                'permission_id': permissDto.permission_id,
+                'permission_name': permissDto.permission_name,
+                'permission_dec': permissDto.permission_dec,
+                'leafCount':0,
+                'children':[]
+            }
+    except:
+        reponse['status'] = 600
+        reponse['message'] = '添加失败'
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 

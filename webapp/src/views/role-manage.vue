@@ -3,8 +3,8 @@
       <h1>角色管理</h1>
       <el-row>
           <el-col :span="18">
-            <el-button size="small" type="primary" v-if="permission.indexOf('新增角色') > -1" @click="addRole">添加角色</el-button> 
-            <el-button size="small" type="primary" v-if="permission.indexOf('删除角色') > -1" @click="deleteRole">删除角色</el-button> 
+            <el-button size="small" type="primary" v-if="permission.indexOf('16') > -1" @click="addRole">添加角色</el-button> 
+            <el-button size="small" type="primary" v-if="permission.indexOf('17') > -1" @click="deleteRole">删除角色</el-button> 
           </el-col>
             <el-col :span="6">
               <el-input size="small" placeholder="请输入内容" v-model.trim="queryContent" class="input-with-select">
@@ -17,7 +17,7 @@
               </el-input>
         </el-col>
       </el-row>
-       <el-table v-if="permission.indexOf('查看角色') > -1" :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
+       <el-table v-if="permission.indexOf('14') > -1" :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column
         prop="role_name"
@@ -43,7 +43,7 @@
       <el-table-column
         label="操作">
         <template slot-scope="scope">
-            <el-button v-if="permission.indexOf('编辑角色') > -1" @click="handleUpdateRole(scope.row)">修改</el-button>
+            <el-button v-if="permission.indexOf('15') > -1" @click="handleUpdateRole(scope.row)">修改</el-button>
         </template>    
       </el-table-column>
     </el-table>
