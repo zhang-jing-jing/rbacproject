@@ -45,74 +45,73 @@ class CJsonEncoder(json.JSONEncoder):
         else:
             return json.JSONEncoder.default(self, obj)
 
-class Users:
-    @post_only
-    def login(request):
-        """
-        用户登录
-        """
-        reponse = {}
-        username = request.POST.get('username')                         
-        password = request.POST.get('password')
-        if username is not None and password is not None:
-            users = user.objects.filter(account=username)
-            if users.count() > 0:
-                userDto = users.first()
-                userDto.login_count += 1 
-                now = datetime.datetime.now()
-                userDto.login_time = now.strptime(
-                        now.strftime("%Y-%m-%d %H:%M:%S"), '%Y-%m-%d %H:%M:%S')
-                userDto.save()
-                if check_password(password, userDto.password):
-                    request.session["is_login"] = True
-                    request.session["login_user"] = username
-                    login_ur = user_role.objects.filter(user_id=userDto.user_id)
-                    role_temp = []
-                    for item in login_ur:
-                        temp_ids = [i.role_id for i in item.role_id.all()][0]
-                        role_temp.append(temp_ids)
-                    for role_id in role_temp:
-                        login_rp = role_permission.objects.filter(role_id=role_id)
-                        permission_temp = []
-                        for rp_item in login_rp:
-                            for i in rp_item.permission_id.all():
-                                permission_temp.append(i.permission_name)
-                    reponse['status'] = 0
-                    reponse['message'] = "登录成功"
-                    reponse['list'] = {
-                        'account': userDto.account,
-                        'user_name': userDto.user_name,
-                        'phone': userDto.phone,
-                        'email': userDto.email,
-                        'create_time': userDto.create_time,
-                        'login_time': userDto.login_time,
-                        'last_login_time': userDto.last_login_time,
-                        'login_count': userDto.login_count,
-                        'permission': permission_temp
-                    }
-                else:
-                    reponse['status'] = 10
-                    reponse['message'] = "密码错误"
+@post_only
+def login(request):
+    """
+    用户登录
+    """
+    reponse = {}
+    username = request.POST.get('username')                         
+    password = request.POST.get('password')
+    if username is not None and password is not None:
+        users = user.objects.filter(account=username)
+        if users.count() > 0:
+            userDto = users.first()
+            userDto.login_count += 1 
+            now = datetime.datetime.now()
+            userDto.login_time = now.strptime(
+                    now.strftime("%Y-%m-%d %H:%M:%S"), '%Y-%m-%d %H:%M:%S')
+            userDto.save()
+            if check_password(password, userDto.password):
+                request.session["is_login"] = True
+                request.session["login_user"] = username
+                login_ur = user_role.objects.filter(user_id=userDto.user_id)
+                role_temp = []
+                for item in login_ur:
+                    temp_ids = [i.role_id for i in item.role_id.all()][0]
+                    role_temp.append(temp_ids)
+                for role_id in role_temp:
+                    login_rp = role_permission.objects.filter(role_id=role_id)
+                    permission_temp = []
+                    for rp_item in login_rp:
+                        for i in rp_item.permission_id.all():
+                            permission_temp.append(i.permission_name)
+                reponse['status'] = 0
+                reponse['message'] = "登录成功"
+                reponse['list'] = {
+                    'account': userDto.account,
+                    'user_name': userDto.user_name,
+                    'phone': userDto.phone,
+                    'email': userDto.email,
+                    'create_time': userDto.create_time,
+                    'login_time': userDto.login_time,
+                    'last_login_time': userDto.last_login_time,
+                    'login_count': userDto.login_count,
+                    'permission': permission_temp
+                }
             else:
-                reponse['status'] = 20
-                reponse['message'] = '用户不存在'
+                reponse['status'] = 10
+                reponse['message'] = "密码错误"
         else:
-            reponse['status'] = 400
-            reponse['message'] = "参数错误"
-        return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+            reponse['status'] = 20
+            reponse['message'] = '用户不存在'
+    else:
+        reponse['status'] = 400
+        reponse['message'] = "参数错误"
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
-    @post_only
-    def logout(request):
-        """
-        用户退出
-        """
-        # del request.session["is_login"] # 删除session_data里的一组键值对
-        reponse = {}
-        if request.method == 'POST':
-            request.session.flush()
-            reponse['status'] = 0
-            reponse['message'] = "退出成功"
-        return HttpResponse(json.dumps(reponse, ensure_ascii=False))
+@post_only
+def logout(request):
+    """
+    用户退出
+    """
+    # del request.session["is_login"] # 删除session_data里的一组键值对
+    reponse = {}
+    if request.method == 'POST':
+        request.session.flush()
+        reponse['status'] = 0
+        reponse['message'] = "退出成功"
+    return HttpResponse(json.dumps(reponse, ensure_ascii=False))
 
 def queryUserList(user_dto, pagesize, pindex):
     paginator = Paginator(user_dto, pagesize)
@@ -212,10 +211,10 @@ def addUser(request):
         if update == False:
             user_dto.password = make_password(request.POST.get('password'))
         user_dto.user_name = request.POST.get('user_name')
-        user_dto.phone = request.POST.get('phone')
-        user_dto.email = request.POST.get('email')
+        user_dto.phone = request.POST.get('phone', default="")
+        user_dto.email = request.POST.get('email', default="")
         user_dto.save()
-        role_ids = request.POST.get('role').split(',')
+        role_ids = request.POST.get('role',default=[]).split(',')
         for i in role_ids:
             role_dto = role.objects.filter(role_id=i).first()
             user_role_dto = user_role()
@@ -256,33 +255,71 @@ def deleteUser(request):
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 @check_user
+@post_only
 def getRoleList(request):
     reponse = {
         'list': []
     }
-    reponse['status'] = 0
-    role_list = role.objects.all()
-    if role_list.count() > 0:
-        for t in role_list:
-            per_dto = role_permission.objects.filter(role_id=t.role_id)
-            per = []
-            for item in per_dto:
-                if item.permission_id.all().count() > 0:
-                    temp_ids, temp_name = [(i.permission_id, i.permission_name) for i in item.permission_id.all()][0]
-                    per.append((temp_ids, temp_name))
-            temp = {
-                'role_id': t.role_id,
-                'pid': t.pid,
-                'role_name': t.role_name,
-                'create_time': t.create_time,
-                'role_dec': t.role_dec,
-                'permission':per
-            }
-            reponse['list'].append(temp)
-    else:
-        reponse['list'] = []
+    try:
+        query_value = request.POST.get('queryValue', default="")
+        query_content = request.POST.get('queryText',default="")
+        pagesize = request.POST.get('pagesize', default=5)
+        # 当前页数
+        pindex = request.POST.get('index', default=1)
+        if query_value != "" and query_content != "":
+            if query_value == "role_name":
+                role_list = role.objects.filter(
+                    role_name__contains=query_content).order_by('role_id')
+            elif query_value == "role_dec":
+                role_list = role.objects.filter(
+                    role_dec__contains=query_content).order_by('role_id')
+            elif query_value == "permission":
+                permission_dto = permission.objects.filter(permission_name__contains=query_content)
+                role_list = role.objects.none()
+                if permission_dto.count() > 0:
+                    for i in permission_dto:
+                        print('22',i.permission_id)
+                        ur = role_permission.objects.filter(permission_id=i.permission_id)
+                        temp_list = []
+                        for ii in ur:
+                            for j in ii.role_id.all():
+                                temp = role.objects.filter(
+                                    role_id=j.role_id).order_by('role_id')
+                                temp_list.append(temp)
+                        role_list = role.objects.none()
+                        for j in temp_list:
+                            role_list = role_list | j
+        else:
+            role_list = role.objects.all().order_by('role_id')
+        reponse['list'] = queryRoleList(role_list, pagesize, pindex)
+        reponse['status'] = 0
+    except:
+        reponse['status'] = 300
+        reponse['list'] = '获取出错,请联系管理员'
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
+def queryRoleList(role_dto, pagesize, pindex):
+    paginator = Paginator(role_dto, pagesize)
+    current_list = paginator.page(pindex)
+    templist = []
+    if len(current_list) > 0:
+        for t in current_list:
+                per_dto = role_permission.objects.filter(role_id=t.role_id)
+                per = []
+                for item in per_dto:
+                    if item.permission_id.all().count() > 0:
+                        temp_ids, temp_name = [(i.permission_id, i.permission_name) for i in item.permission_id.all()][0]
+                        per.append((temp_ids, temp_name))
+                temp = {
+                    'role_id': t.role_id,
+                    'pid': t.pid,
+                    'role_name': t.role_name,
+                    'create_time': t.create_time,
+                    'role_dec': t.role_dec,
+                    'permission':per
+                }
+                templist.append(temp)
+    return templist
 
 @check_user
 @post_only
@@ -340,16 +377,22 @@ def deleteRole(request):
         reponse = {}
         try:
             for i in d_id:
-                delete_role = role.objects.filter(role_id=i).first()
-                if delete_role:
-                    role_permission.objects.filter(role_id=i).delete()
-                    delete_role.delete()
+                ur_dto = user_role.objects.filter(role_id=i)
+                print('count++++',ur_dto.count())
+                if ur_dto.count() == 0:
+                    print('1')
+                    delete_role = role.objects.filter(role_id=i).first()
+                    if delete_role:
+                        role_permission.objects.filter(role_id=i).delete()
+                        delete_role.delete()
+                    reponse['status'] = 0
+                    reponse['message'] = '删除成功'
+                else:
+                    reponse['status'] = 300
+                    reponse['message'] = '有关联的用户，请删除了相关用户后删除该角色'
         except:
             reponse['status'] = 300
             reponse['message'] = '删除异常'
-        else:
-            reponse['status'] = 0
-            reponse['message'] = '删除成功'
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
 
 def getPermissionById(pid):

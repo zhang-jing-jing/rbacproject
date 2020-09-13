@@ -97,7 +97,7 @@
           <el-form-item label="邮箱" prop="email">
             <el-input v-model="UserForm.email"></el-input>
           </el-form-item>
-          <el-form-item label="角色">
+          <el-form-item label="角色" prop="role">
             <el-checkbox-group v-model="UserForm.role">
               <template v-for="item in roleData">
                 <el-checkbox :key="item.role_id" :label="item.role_id">{{item.role_name}}</el-checkbox>
@@ -150,6 +150,9 @@ export default {
                 email:[
                   { required: false, message: '请输入邮箱', trigger: 'change' },
                   {pattern: /[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\w](?:[\w-]*[\w])?\.)+[\w](?:[\w-]*[\w])?/,message: '请輸入正确的格式', trigger: 'blur'}
+                ],
+                role:[
+                  { required: true, message: '请选择角色', trigger: 'change' }
                 ]
             },
             permission:'',
@@ -261,7 +264,7 @@ export default {
             })
         },
         loadRole(){
-            this.$axios.get('/apis/getRoleList').then(res=>{
+            this.$axios.post('/apis/getRoleList').then(res=>{
                 if (res.status === 200) {
                     if(res.data.status === 0){
                         this.roleData = res.data.list

@@ -19,8 +19,8 @@ from app import views as myViews
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login', myViews.Users.login),
-    path('logout', myViews.Users.logout),
+    path('login', myViews.login),
+    path('logout', myViews.logout),
     path('getUserList', myViews.getUserList),
     path('getRoleList', myViews.getRoleList),
     path('getPermissionList', myViews.getPermissionList),

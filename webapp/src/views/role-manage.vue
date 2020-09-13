@@ -1,10 +1,22 @@
 <template>
   <section>
       <h1>角色管理</h1>
-      <div>
+      <el-row>
+          <el-col :span="18">
             <el-button size="small" type="primary" v-if="permission.indexOf('新增角色') > -1" @click="addRole">添加角色</el-button> 
             <el-button size="small" type="primary" v-if="permission.indexOf('删除角色') > -1" @click="deleteRole">删除角色</el-button> 
-      </div>
+          </el-col>
+            <el-col :span="6">
+              <el-input size="small" placeholder="请输入内容" v-model.trim="queryContent" class="input-with-select">
+                <el-select v-model="querySelect" style="width:100px" slot="prepend" placeholder="请选择">
+                  <template v-for="item in queryOption">
+                    <el-option :key="item.value" :label="item.label" :value="item.value"></el-option>
+                  </template>  
+                </el-select>
+                <el-button slot="append" icon="el-icon-search" @click="handleFilterRole"></el-button>
+              </el-input>
+        </el-col>
+      </el-row>
        <el-table v-if="permission.indexOf('查看角色') > -1" :data="tableData" style="width: 100%" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column
@@ -98,7 +110,17 @@ export default {
                 ]
             },
             dialogTitle:'添加角色',
-            permission:''
+            permission:'',
+            total:0,
+            pageSize:10,
+            currentPage:1,
+            queryContent:'',
+            querySelect:'',
+            queryOption:[
+              {label:'角色名称',value:'role_name'},
+              {label:'角色描述',value:'role_dec'},
+              {label:'权限',value:'permission'}
+            ]
         }
     },
     mounted(){
@@ -107,12 +129,20 @@ export default {
       this.permission = this.$store.state.user.permission.join(',')
     },
     methods:{
+        handleFilterRole(){
+              this.loadData()
+        },
         loadData(){
-            // let param = new URLSearchParams()
-            this.$axios.get('/apis/getRoleList').then(res=>{
+            let param = new URLSearchParams()
+            param.append('index',this.currentPage)
+            param.append('pagesize', this.pageSize)
+            param.append('queryValue',this.querySelect)
+            param.append('queryText',this.queryContent)
+            this.$axios.post('/apis/getRoleList',param).then(res=>{
                 if (res.status === 200) {
                     if(res.data.status === 0){
                         this.tableData = res.data.list
+                        console.log('this.tableData',this.tableData)
                     }else if(res.data.status === 600){
                         this.$router.push({path:'/'})
                     }
