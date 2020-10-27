@@ -47,6 +47,14 @@
         </template>    
       </el-table-column>
     </el-table>
+     <el-pagination style="text-align: right;"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          layout="prev, pager, next"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange">
+        </el-pagination>
     <el-dialog title="修改权限"
         :visible.sync="dialogVisible"
         width="30%">
@@ -130,7 +138,21 @@ export default {
     },
     methods:{
         handleFilterRole(){
-              this.loadData()
+            if (this.querySelect == "") {
+                this.$message({
+                    type: 'warning',
+                    message: '请选择查询字段!'
+                });
+            }else{
+                this.loadData()
+            }
+        },
+        handleSizeChange(val) {
+          this.pageSize = val
+        },
+        handleCurrentChange(val) {
+          this.currentPage = val
+          this.loadData()
         },
         loadData(){
             let param = new URLSearchParams()
@@ -142,6 +164,7 @@ export default {
                 if (res.status === 200) {
                     if(res.data.status === 0){
                         this.tableData = res.data.list
+                        this.total = res.data.total
                         console.log('this.tableData',this.tableData)
                     }else if(res.data.status === 600){
                         this.$router.push({path:'/'})

@@ -6,7 +6,6 @@ from django.db import models
 
 class role(models.Model):
     role_id = models.AutoField(primary_key=True)
-    pid = models.BigIntegerField()
     role_name = models.CharField(max_length=64)
     create_time = models.DateField()
     role_dec = models.CharField(max_length=200, default='', null=True)
@@ -39,10 +38,8 @@ class user_permission(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.ManyToManyField(user)
     permission_id = models.ManyToManyField(permission)
-    permission_type = models.IntegerField()
 
 class role_permission(models.Model):
     id = models.AutoField(primary_key=True)
     role_id = models.ManyToManyField(role)
     permission_id = models.ManyToManyField(permission)
-    permission_type = models.IntegerField()

@@ -113,6 +113,9 @@ def logout(request):
         reponse['message'] = "退出成功"
     return HttpResponse(json.dumps(reponse, ensure_ascii=False))
 
+def getNonRepeatList(data):
+    return list(set(data))
+
 def queryUserList(user_dto, pagesize, pindex):
     paginator = Paginator(user_dto, pagesize)
     current_list = paginator.page(pindex)
@@ -121,10 +124,17 @@ def queryUserList(user_dto, pagesize, pindex):
         for t in current_list:
             ur = user_role.objects.filter(user_id=t.user_id)
             role_temp = []
+            permission_temp = []
             for item in ur:
                 temp_ids, temp_name = [(i.role_id, i.role_name)
                                        for i in item.role_id.all()][0]
                 role_temp.append((temp_ids, temp_name))
+                rp = role_permission.objects.filter(role_id=temp_ids)
+                for _permiss in rp:
+                    if _permiss.permission_id.all().count() > 0 :
+                        temp_pids, temp_pname = [(i.permission_id, i.permission_name)
+                                        for i in _permiss.permission_id.all()][0]
+                        permission_temp.append((temp_pids, temp_pname))
             temp = {
                 'account': t.account,
                 'user_name': t.user_name,
@@ -135,13 +145,11 @@ def queryUserList(user_dto, pagesize, pindex):
                 'last_login_time': t.last_login_time,
                 'login_count': t.login_count,
                 'user_id': t.user_id,
-                'role': role_temp
+                'role': role_temp,
+                'permission':sorted(getNonRepeatList(permission_temp))
             }
             templist.append(temp)
     return templist
-
-def queryUserById(id):
-    pass
 
 @check_user
 @post_only
@@ -181,7 +189,10 @@ def getUserList(request):
                     user_list = user.objects.none()
                     for j in temp_list:
                         user_list = user_list | j
+            elif query_value == "permission":
+                user_list = queryUserByPermission(query_content)
         else:
+            print('111')
             user_list = user.objects.all().order_by('user_id')
         if user_list.count() > 0:
             reponse['list'] = queryUserList(user_list, pagesize, pindex)
@@ -194,6 +205,24 @@ def getUserList(request):
     else:
         reponse['status'] = 0
     return HttpResponse(json.dumps(reponse, ensure_ascii=False, cls=CJsonEncoder))
+
+def queryUserByPermission(query):
+    permission_dto = permission.objects.filter(permission_name__contains=query)
+    temp_list = []
+    for i in permission_dto:
+        rp = role_permission.objects.filter(permission_id=i.permission_id)
+        for ii in rp:
+            for j in ii.role_id.all():
+                ur = user_role.objects.filter(role_id=j.role_id)
+                for ur_item in ur:
+                    for u_item in ur_item.user_id.all():
+                        temp = user.objects.filter(
+                            user_id=u_item.user_id).order_by('user_id')
+                        temp_list.append(temp)
+    user_list = user.objects.none()
+    for j in temp_list:
+        user_list = user_list | j
+    return user_list
 
 @check_user
 def addUser(request):
@@ -293,6 +322,7 @@ def getRoleList(request):
             role_list = role.objects.all().order_by('role_id')
         reponse['list'] = queryRoleList(role_list, pagesize, pindex)
         reponse['status'] = 0
+        reponse['total'] = role_list.count()
     except:
         reponse['status'] = 300
         reponse['list'] = '获取出错,请联系管理员'
@@ -312,7 +342,6 @@ def queryRoleList(role_dto, pagesize, pindex):
                         per.append((temp_ids, temp_name))
                 temp = {
                     'role_id': t.role_id,
-                    'pid': t.pid,
                     'role_name': t.role_name,
                     'create_time': t.create_time,
                     'role_dec': t.role_dec,
@@ -331,7 +360,7 @@ def addRole(request):
     permission_ids = request.POST.get('permission').split(',')
     for i in permission_ids:
         permission_dto = permission.objects.filter(permission_id=i).first()
-        role_permission_dto = role_permission(permission_type=0)
+        role_permission_dto = role_permission()
         role_permission_dto.save()
         role_permission_dto.role_id.add(role_dto)
         role_permission_dto.permission_id.add(permission_dto)
@@ -348,14 +377,16 @@ def updateRole(request):
     try:
         role_id = request.POST.get('role_id')
         if role_id:
+            print('0+++')
             role_dto = role.objects.filter(role_id=role_id).first()
             role_dto.role_name = request.POST.get('role_name')
             role_dto.role_dec = request.POST.get('role_dec')
             role_dto.save()
+            print('1++')
             per_list = request.POST.get('permission').split(',')
             role_permission.objects.filter(role_id=role_id).delete()
             for t in per_list:
-                role_per_dto = role_permission(permission_type=0)
+                role_per_dto = role_permission()
                 role_per_dto.save()
                 permission_dto = permission.objects.filter(permission_id=t).first()
                 role_per_dto.role_id.add(role_dto)

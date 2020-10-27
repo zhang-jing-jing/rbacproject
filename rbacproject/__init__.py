@@ -4,4 +4,6 @@ setting中的配置默认为sqlite3数据库 当需要修改成MySql时
 否则会报错： Error loading MySQLdb module.
 """
 import pymysql
-pymysql.install_as_MySQLdb()
+
+pymysql.version_info = (1, 4, 13, "final", 0)   # 指定版本
+pymysql.install_as_MySQLdb()  

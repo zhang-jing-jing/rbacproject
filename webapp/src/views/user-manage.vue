@@ -47,14 +47,23 @@
              </span>
         </template> 
       </el-table-column>
+      <el-table-column
+        prop="permission" width="200px"
+        label="权限">
+          <template slot-scope="scope">
+             <span v-for="(item,index) in scope.row.permission" :key="index">
+                {{item[1]}},
+             </span>
+        </template> 
+      </el-table-column>
        <el-table-column
         prop="login_count"
         label="登录次数">
       </el-table-column>
-        <el-table-column
+        <!-- <el-table-column
         prop="create_time"
         label="创建时间">
-      </el-table-column>
+      </el-table-column> -->
         <el-table-column
         prop="last_login_time"
         label="上次登录时间">
@@ -166,7 +175,8 @@ export default {
               {label:'账号',value:'account'},
               {label:'用户名',value:'user_name'},
               {label:'电话',value:'phone'},
-              {label:'邮箱',value:'email'}
+              {label:'邮箱',value:'email'},
+              {label:'权限',value:'permission'}
             ]
         }
     },
@@ -183,14 +193,17 @@ export default {
                   type: 'warning',
                   message: '请选择查询字段!'
               });
-          }else if (this.queryContent == "") {
-              this.$message({
-                  type: 'warning',
-                  message: '请输入查询内容!'
-              });
           }else{
               this.loadData()
           }
+          // else if (this.queryContent == "") {
+          //     this.$message({
+          //         type: 'warning',
+          //         message: '请输入查询内容!'
+          //     });
+          // }else{
+              
+          // }
         },
         handleSizeChange(val) {
           this.pageSize = val

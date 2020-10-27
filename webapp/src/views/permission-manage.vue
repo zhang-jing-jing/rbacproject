@@ -1,14 +1,15 @@
 <template>
   <section>
       <h1>权限管理</h1>
+      <el-button type="small" class="mb20" @click="appendRoot">添加权限</el-button>
       <el-row>
         <el-col :span="12">
           <el-tree v-if="permission.indexOf('20') > -1" :props="props"
-              :data="tableData" highlight-current default-expand-all>
+              :data="tableData" highlight-current>
               <span class="custom-tree-node" slot-scope="{ node, data }">
               <span class="tree-label">{{ node.label }}</span>
               <span>
-                <el-button v-if="permission.indexOf('19') > -1" icon="el-icon-plus"
+                <el-button v-if="permission.indexOf('26') > -1" icon="el-icon-plus"
                   type="text"
                   size="mini"
                   @click.stop="() => append(node,data)">
@@ -109,10 +110,15 @@ export default {
           this.currentNode = data;
           this.dialogVisible = true;
         },
+        appendRoot(){
+          this.currentNode.permission_name = "根结点"
+          this.currentNode.permission_id = 0
+          this.dialogVisible = true;
+        },
         updateNode(node, data){
           this.currentNode = data;
           this.updateForm = JSON.parse(JSON.stringify(this.currentNode))
-          console.log('++++++',this.currentNode)
+          // console.log('++++++',this.currentNode)
           this.dialogUpdateVisible = true;
         },
         confirmAdd(){
@@ -192,17 +198,20 @@ export default {
 </script>
 
 <style lang="scss">
-  .custom-tree-node {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-    padding-right: 8px;
-    .tree-label{
-      margin-right: 15px;
-    }
-    .el-button{
-      color: #333333;
-    }
+.mb20{
+  margin-bottom: 15px;
+}
+.custom-tree-node {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding-right: 8px;
+  .tree-label{
+    margin-right: 15px;
   }
+  .el-button{
+    color: #333333;
+  }
+}
 </style>
